@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Sistema de Ventas Mayas</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <aside class="sidebar">
+    <h2>📊 Mayas</h2>
+    <nav>
+      <button onclick="mostrar('dashboard')">Dashboard</button>
+      <button onclick="mostrar('productos')">Productos</button>
+      <button onclick="mostrar('inventario')">Inventario</button>
+      <button onclick="mostrar('ventas')">Ventas</button>
+      <button onclick="mostrar('gastos')">Gastos</button>
+      <button onclick="mostrar('clientes')">Clientes</button>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <section id="dashboard" class="vista activa">
+      <h1>Resumen General</h1>
+      <div class="cards">
+        <div class="card">💰 Ventas <span id="totalVentas">$0</span></div>
+        <div class="card">📦 Costos <span id="totalCostos">$0</span></div>
+        <div class="card">📉 Gastos <span id="totalGastos">$0</span></div>
+        <div class="card">📊 Utilidad <span id="utilidad">$0</span></div>
+      </div>
+
+      <div class="card" style="margin-top:30px">
+        <h3>📅 Resumen por rango de fechas</h3>
+
+        <div style="margin-bottom:10px">
+          <label>
+            Desde:
+            <input type="date" id="fechaInicio">
+          </label>
+
+          <label style="margin-left:10px">
+            Hasta:
+            <input type="date" id="fechaFin">
+          </label>
+
+          <button class="primary" style="margin-left:10px" id="btnFiltrar">
+            Calcular
+          </button>
+        </div>
+
+        <div class="cards">
+          <div class="card">💰 Ventas <span id="filtroVentas">$0</span></div>
+          <div class="card">📦 Costos <span id="filtroCostos">$0</span></div>
+          <div class="card">📉 Gastos <span id="filtroGastos">$0</span></div>
+          <div class="card">📊 Utilidad <span id="filtroUtilidad">$0</span></div>
+        </div>
+      </div>
+
+
+
+    </section>
+
+    <section id="productos" class="vista">
+      <h1>Productos</h1>
+      <button>➕ Nuevo producto</button>
+      <table class="tabla">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Costo</th>
+          <th>Precio Venta</th>
+          <th>Ganancia</th>
+        </tr>
+      </thead>
+      <tbody id="tablaProductos"></tbody>
+    </table>
+
+    </section>
+
+    <section id="inventario" class="vista">
+    <h1>Inventario</h1>
+
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Stock</th>
+          <th>Stock mínimo</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody id="tablaInventario"></tbody>
+    </table>
+  </section>
+
+
+    <section id="ventas" class="vista">
+    <h1>Ventas</h1>
+
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Tipo</th>
+          <th>Productos</th>
+          <th>Total</th>
+          <th>Ganancia</th>
+        </tr>
+      </thead>
+      <tbody id="tablaVentas"></tbody>
+    </table>
+  </section>
+
+
+    <section id="gastos" class="vista">
+    <h1>Gastos</h1>
+
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Descripción</th>
+          <th>Categoría</th>
+          <th>Monto</th>
+        </tr>
+      </thead>
+      <tbody id="tablaGastos"></tbody>
+    </table>
+  </section>
+
+  <section id="clientes" class="vista">
+    <h1>Clientes</h1>
+
+    <table class="tabla">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th>Teléfono</th>
+          <th>Dirección</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody id="tablaClientes"></tbody>
+    </table>
+  </section>
+
+
+  </main>
+
+<script>
+function mostrar(id) {
+  document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
+  document.getElementById(id).classList.add('activa');
+}
+</script>
+<script type="module" src="js/productos.js"></script>
+<script type="module" src="js/inventario.js"></script>
+<script type="module" src="js/ventas.js"></script>
+<script type="module" src="js/gastos.js"></script>
+<script type="module" src="js/clientes.js"></script>
+<script type="module" src="js/dashboard.js"></script>
+
+
+</body>
+</html>
