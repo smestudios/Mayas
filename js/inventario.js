@@ -1,71 +1,177 @@
 import { db } from "./firebase.js";
 import {
   collection,
-  getDocs,
+  onSnapshot,
   doc,
-  getDoc
+  getDoc,
+  setDoc,
+  updateDoc,
+  addDoc,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const tablaInventario = document.getElementById("tablaInventario");
+/* =========================
+   ELEMENTOS DOM
+========================= */
+const tabla = document.getElementById("tablaInventario");
 
-async function cargarInventario() {
-  tablaInventario.innerHTML = "";
+const modal = document.getElementById("modalInventario");
+const tituloModal = document.getElementById("tituloInventario");
+const nombreProductoTxt = document.getElementById("nombreProductoInventario");
+const inputCantidad = document.getElementById("cantidadMovimiento");
+const inputMotivo = document.getElementById("motivoMovimiento");
 
-  try {
-    // 1️⃣ Traer todo el inventario
-    const inventarioSnapshot = await getDocs(collection(db, "inventario"));
+const btnGuardar = document.getElementById("btnGuardarMovimiento");
+const btnCancelar = document.getElementById("btnCancelarInventario");
 
-    if (inventarioSnapshot.empty) {
-      tablaInventario.innerHTML = `
-        <tr>
-          <td colspan="4">No hay registros de inventario</td>
-        </tr>
-      `;
-      return;
-    }
+/* =========================
+   ESTADO
+========================= */
+let inventarioActualId = null;
+let tipoMovimiento = null; // entrada | salida | ajuste
+let stockActual = 0;
+let productosCache = [];
+let inventarioCache = {};
 
-    // 2️⃣ Recorrer inventario
-    for (const invDoc of inventarioSnapshot.docs) {
-      const inv = invDoc.data();
 
-      // 3️⃣ Buscar el producto relacionado
-      const productoRef = doc(db, "productos", inv.productoId);
-      const productoSnap = await getDoc(productoRef);
+/* =========================
+   INVENTARIO EN TIEMPO REAL
+========================= */
+function escucharInventario() {
 
-      let nombreProducto = "Producto no encontrado";
+  // 🔹 Escuchar productos
+  onSnapshot(collection(db, "productos"), (snap) => {
+    productosCache = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(p => p.activo);
 
-      if (productoSnap.exists()) {
-        nombreProducto = productoSnap.data().nombre;
-      }
+    renderInventario();
+  });
 
-      // 4️⃣ Estado del stock
-      let estado = "";
-      if (inv.stock <= inv.stockMinimo) {
-        estado = `<span class="ganancia-negativa">⚠ Bajo</span>`;
-      } else {
-        estado = `<span class="ganancia-positiva">✔ OK</span>`;
-      }
+  // 🔹 Escuchar inventario
+  onSnapshot(collection(db, "inventario"), (snap) => {
+    inventarioCache = {};
+    snap.docs.forEach(d => {
+      inventarioCache[d.id] = d.data();
+    });
 
-      // 5️⃣ Pintar fila
-      tablaInventario.innerHTML += `
-        <tr>
-          <td>${nombreProducto}</td>
-          <td>${inv.stock}</td>
-          <td>${inv.stockMinimo}</td>
-          <td>${estado}</td>
-        </tr>
-      `;
-    }
-
-  } catch (error) {
-    console.error("Error cargando inventario:", error);
-    tablaInventario.innerHTML = `
-      <tr>
-        <td colspan="4">Error cargando inventario</td>
-      </tr>
-    `;
-  }
+    renderInventario();
+  });
 }
 
-// Ejecutar
-cargarInventario();
+function renderInventario() {
+  tabla.innerHTML = "";
+
+  productosCache.forEach(producto => {
+    const inv = inventarioCache[producto.id] || {
+      stock: 0,
+      stockMinimo: 5
+    };
+
+    let estado = "OK";
+    let claseEstado = "ganancia-positiva";
+
+    if (inv.stock <= inv.stockMinimo) {
+      estado = "BAJO";
+      claseEstado = "ganancia-negativa";
+    }
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${producto.nombre}</td>
+      <td>${inv.stock}</td>
+      <td>${inv.stockMinimo}</td>
+      <td class="${claseEstado}">${estado}</td>
+      <td>
+        <button title="Entrada" onclick="abrirMovimiento('${producto.id}', '${producto.nombre}', ${inv.stock}, 'entrada')">➕</button>
+        <button title="Salida" onclick="abrirMovimiento('${producto.id}', '${producto.nombre}', ${inv.stock}, 'salida')">➖</button>
+        <button title="Ajuste" onclick="abrirMovimiento('${producto.id}', '${producto.nombre}', ${inv.stock}, 'ajuste')">✏️</button>
+      </td>
+    `;
+    tabla.appendChild(tr);
+  });
+}
+
+
+/* =========================
+   ABRIR MODAL
+========================= */
+window.abrirMovimiento = (id, nombre, stock, tipo) => {
+  inventarioActualId = id;
+  tipoMovimiento = tipo;
+  stockActual = stock;
+
+  tituloModal.textContent =
+    tipo === "entrada" ? "Entrada de inventario" :
+    tipo === "salida" ? "Salida de inventario" :
+    "Ajuste de inventario";
+
+  nombreProductoTxt.textContent = `Producto: ${nombre}`;
+  inputCantidad.value = "";
+  inputMotivo.value = "";
+
+  modal.classList.add("activo");
+};
+
+/* =========================
+   GUARDAR MOVIMIENTO
+========================= */
+btnGuardar.onclick = async () => {
+  const cantidad = Number(inputCantidad.value);
+  if (cantidad <= 0) {
+    alert("Cantidad inválida");
+    return;
+  }
+
+  let nuevoStock = stockActual;
+
+  if (tipoMovimiento === "entrada") {
+    nuevoStock += cantidad;
+  }
+
+  if (tipoMovimiento === "salida") {
+    if (cantidad > stockActual) {
+      alert("No hay suficiente stock");
+      return;
+    }
+    nuevoStock -= cantidad;
+  }
+
+  if (tipoMovimiento === "ajuste") {
+    nuevoStock = cantidad;
+  }
+
+  // Actualizar inventario
+  await updateDoc(doc(db, "inventario", inventarioActualId), {
+    stock: nuevoStock
+  });
+
+  // Guardar historial (MUY IMPORTANTE)
+  await addDoc(collection(db, "movimientosInventario"), {
+    inventarioId: inventarioActualId,
+    tipo: tipoMovimiento,
+    cantidad,
+    stockAnterior: stockActual,
+    stockNuevo: nuevoStock,
+    motivo: inputMotivo.value || "",
+    fecha: serverTimestamp()
+  });
+
+  cerrarModal();
+};
+
+/* =========================
+   CERRAR MODAL
+========================= */
+function cerrarModal() {
+  modal.classList.remove("activo");
+  inventarioActualId = null;
+  tipoMovimiento = null;
+}
+
+btnCancelar.onclick = cerrarModal;
+
+/* =========================
+   INICIAR
+========================= */
+escucharInventario();

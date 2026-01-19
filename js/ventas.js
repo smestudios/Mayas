@@ -2,83 +2,239 @@ import { db } from "./firebase.js";
 import {
   collection,
   getDocs,
+  addDoc,
+  updateDoc,
   doc,
-  getDoc
+  serverTimestamp,
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+/* =========================
+   ELEMENTOS DOM
+========================= */
 const tablaVentas = document.getElementById("tablaVentas");
 
-async function cargarVentas() {
-  tablaVentas.innerHTML = "";
+const btnVender = document.getElementById("btnVender");
+const modalVenta = document.getElementById("modalVenta");
+const btnCancelarVenta = document.getElementById("btnCancelarVenta");
+const btnGuardarVenta = document.getElementById("btnGuardarVenta");
+const btnAgregarProducto = document.getElementById("btnAgregarProducto");
 
-  try {
-    const ventasSnapshot = await getDocs(collection(db, "ventas"));
+const ventaCliente = document.getElementById("ventaCliente");
+const ventaTipo = document.getElementById("ventaTipo");
+const contenedorProductos = document.getElementById("productosVenta");
 
-    if (ventasSnapshot.empty) {
-      tablaVentas.innerHTML = `
-        <tr>
-          <td colspan="6">No hay ventas registradas</td>
-        </tr>
-      `;
-      return;
-    }
+const ventaTotalTxt = document.getElementById("ventaTotal");
+const ventaGananciaTxt = document.getElementById("ventaGanancia");
 
-    for (const ventaDoc of ventasSnapshot.docs) {
-      const v = ventaDoc.data();
+/* =========================
+   ESTADO
+========================= */
+let productosDisponibles = [];
+let productosVenta = [];
 
-      // 📅 Fecha
-      let fecha = "—";
-      if (v.fecha?.seconds) {
-        fecha = new Date(v.fecha.seconds * 1000).toLocaleDateString();
-      }
+/* =========================
+   CARGAR PRODUCTOS ACTIVOS
+========================= */
+async function cargarProductos() {
+  const snap = await getDocs(collection(db, "productos"));
+  productosDisponibles = [];
 
-      // 👤 Cliente
-      let cliente = "Cliente eliminado";
-      if (v.clienteId) {
-        const clienteRef = doc(db, "clientes", v.clienteId);
-        const clienteSnap = await getDoc(clienteRef);
-        if (clienteSnap.exists()) {
-          cliente = clienteSnap.data().nombre;
-        }
-      }
-
-      // 📦 Productos
-      let productosHTML = "";
-      v.productos.forEach(p => {
-        productosHTML += `
-          ${p.nombre} (x${p.cantidad})<br>
-        `;
+  snap.forEach(d => {
+    const p = d.data();
+    if (p.activo) {
+      productosDisponibles.push({
+        id: d.id,
+        nombre: p.nombre,
+        costo: p.costo,
+        precio: p.precio
       });
-
-      // 🎨 Tipo
-      const tipo = v.tipo === "fisica" ? "🏪 Física" : "🌐 Web";
-
-      // 💰 Ganancia
-      const gananciaClass =
-        v.ganancia >= 0 ? "ganancia-positiva" : "ganancia-negativa";
-
-      tablaVentas.innerHTML += `
-        <tr>
-          <td>${fecha}</td>
-          <td>${cliente}</td>
-          <td>${tipo}</td>
-          <td>${productosHTML}</td>
-          <td>$${v.totalVenta.toLocaleString()}</td>
-          <td class="${gananciaClass}">
-            $${v.ganancia.toLocaleString()}
-          </td>
-        </tr>
-      `;
     }
-
-  } catch (error) {
-    console.error("Error cargando ventas:", error);
-    tablaVentas.innerHTML = `
-      <tr>
-        <td colspan="6">Error cargando ventas</td>
-      </tr>
-    `;
-  }
+  });
 }
 
-cargarVentas();
+/* =========================
+   ABRIR / CERRAR MODAL
+========================= */
+btnVender.onclick = async () => {
+  await cargarProductos();
+
+  productosVenta = [];
+  contenedorProductos.innerHTML = "";
+  ventaCliente.value = "";
+  ventaTotalTxt.textContent = "0";
+  ventaGananciaTxt.textContent = "0";
+
+  modalVenta.classList.add("activo");
+};
+
+btnCancelarVenta.onclick = () => {
+  modalVenta.classList.remove("activo");
+};
+
+/* =========================
+   AGREGAR PRODUCTO A VENTA
+========================= */
+btnAgregarProducto.onclick = () => {
+  const fila = document.createElement("div");
+  fila.className = "fila-venta";
+
+  const select = document.createElement("select");
+  select.innerHTML = `<option value="">Producto</option>`;
+  productosDisponibles.forEach(p => {
+    select.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
+  });
+
+  const cantidad = document.createElement("input");
+  cantidad.type = "number";
+  cantidad.min = 1;
+  cantidad.placeholder = "Cantidad";
+
+  const precio = document.createElement("input");
+  precio.type = "number";
+  precio.placeholder = "Precio";
+
+  const btnEliminar = document.createElement("button");
+  btnEliminar.textContent = "✖";
+  btnEliminar.className = "danger";
+
+  btnEliminar.onclick = () => {
+    fila.remove();
+    calcularTotales();
+  };
+
+  select.onchange = () => {
+    const prod = productosDisponibles.find(p => p.id === select.value);
+    if (prod) precio.value = prod.precio;
+    calcularTotales();
+  };
+
+  cantidad.oninput = calcularTotales;
+  precio.oninput = calcularTotales;
+
+  fila.append(select, cantidad, precio, btnEliminar);
+  contenedorProductos.appendChild(fila);
+};
+
+/* =========================
+   CALCULAR TOTALES
+========================= */
+function calcularTotales() {
+  let total = 0;
+  let ganancia = 0;
+
+  document.querySelectorAll(".fila-venta").forEach(fila => {
+    const select = fila.querySelector("select");
+    const inputs = fila.querySelectorAll("input");
+    const cantidad = Number(inputs[0].value);
+    const precio = Number(inputs[1].value);
+
+    if (!select.value || !cantidad || !precio) return;
+
+    const prod = productosDisponibles.find(p => p.id === select.value);
+    if (!prod) return;
+
+    total += cantidad * precio;
+    ganancia += cantidad * (precio - prod.costo);
+  });
+
+  ventaTotalTxt.textContent = total;
+  ventaGananciaTxt.textContent = ganancia;
+}
+
+/* =========================
+   GUARDAR VENTA
+========================= */
+btnGuardarVenta.onclick = async () => {
+  if (!ventaCliente.value) {
+    alert("Ingrese cliente");
+    return;
+  }
+
+  const productos = [];
+
+  document.querySelectorAll(".fila-venta").forEach(fila => {
+    const select = fila.querySelector("select");
+    const inputs = fila.querySelectorAll("input");
+    const cantidad = Number(inputs[0].value);
+    const precio = Number(inputs[1].value);
+
+    if (!select.value || !cantidad || !precio) return;
+
+    const prod = productosDisponibles.find(p => p.id === select.value);
+
+    productos.push({
+      productoId: prod.id,
+      nombre: prod.nombre,
+      cantidad,
+      precio,
+      costo: prod.costo,
+      subtotal: cantidad * precio
+    });
+  });
+
+  if (productos.length === 0) {
+    alert("Agregue al menos un producto");
+    return;
+  }
+
+  let total = 0;
+  let costoTotal = 0;
+
+  productos.forEach(p => {
+    total += p.subtotal;
+    costoTotal += p.costo * p.cantidad;
+  });
+
+  const ganancia = total - costoTotal;
+
+  // Guardar venta
+  await addDoc(collection(db, "ventas"), {
+    fecha: serverTimestamp(),
+    cliente: ventaCliente.value,
+    tipo: ventaTipo.value,
+    productos,
+    total,
+    costoTotal,
+    ganancia
+  });
+
+  // Descontar inventario
+  for (const p of productos) {
+    const invRef = doc(db, "inventario", p.productoId);
+    await updateDoc(invRef, {
+      stock: p => p.stock - p.cantidad
+    });
+  }
+
+  modalVenta.classList.remove("activo");
+};
+
+/* =========================
+   HISTORIAL DE VENTAS
+========================= */
+onSnapshot(collection(db, "ventas"), snap => {
+  tablaVentas.innerHTML = "";
+
+  snap.forEach(docu => {
+    const v = docu.data();
+
+    const productosTxt = v.productos
+      .map(p => `${p.nombre} x${p.cantidad}`)
+      .join(", ");
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${v.fecha?.toDate().toLocaleDateString() || ""}</td>
+      <td>${v.cliente}</td>
+      <td>${v.tipo}</td>
+      <td>${productosTxt}</td>
+      <td>$${v.total}</td>
+      <td class="${v.ganancia >= 0 ? "ganancia-positiva" : "ganancia-negativa"}">
+        $${v.ganancia}
+      </td>
+    `;
+
+    tablaVentas.appendChild(tr);
+  });
+});

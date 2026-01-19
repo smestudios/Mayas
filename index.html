@@ -108,24 +108,63 @@
 
 
     <section id="inventario" class="vista">
-    <h1>Inventario</h1>
+      <h1>Inventario</h1>
 
-    <table class="tabla">
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Stock</th>
-          <th>Stock mínimo</th>
-          <th>Estado</th>
-        </tr>
-      </thead>
-      <tbody id="tablaInventario"></tbody>
-    </table>
-  </section>
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Stock actual</th>
+            <th>Stock mínimo</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tablaInventario">
+          <!-- JS llena esto -->
+        </tbody>
+      </table>
+    </section>
+
+
+    <!-- MODAL INVENTARIO -->
+    <div class="modal" id="modalInventario">
+      <div class="modal-content">
+        <h3 id="tituloInventario">Movimiento de inventario</h3>
+
+        <p id="nombreProductoInventario" style="margin-bottom:10px;font-weight:600"></p>
+
+        <input
+          type="number"
+          id="cantidadMovimiento"
+          placeholder="Cantidad"
+          min="1"
+        >
+
+        <input
+          type="text"
+          id="motivoMovimiento"
+          placeholder="Motivo (opcional)"
+        >
+
+        <div class="acciones">
+          <button class="primary" id="btnGuardarMovimiento">
+            Guardar
+          </button>
+          <button class="danger" id="btnCancelarInventario">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
 
 
     <section id="ventas" class="vista">
     <h1>Ventas</h1>
+    
+    <div class="toolbar">
+      <button class="primary" id="btnVender">🛒 Vender</button>
+    </div>
 
     <table class="tabla">
       <thead>
@@ -141,6 +180,42 @@
       <tbody id="tablaVentas"></tbody>
     </table>
   </section>
+
+  <!-- MODAL VENTA  -->
+  <div class="modal" id="modalVenta">
+    <div class="modal-content" style="max-width:600px">
+
+      <h3>Nueva venta</h3>
+
+      <input id="ventaCliente" placeholder="Cliente / Tienda">
+
+      <select id="ventaTipo">
+        <option value="mostrador">Mostrador</option>
+        <option value="tienda">Tienda</option>
+        <option value="online">Online</option>
+      </select>
+
+      <hr>
+
+      <div id="productosVenta"></div>
+
+      <button class="secondary" id="btnAgregarProducto">
+        ➕ Agregar producto
+      </button>
+
+      <hr>
+
+      <p><strong>Total:</strong> $<span id="ventaTotal">0</span></p>
+      <p><strong>Ganancia:</strong> $<span id="ventaGanancia">0</span></p>
+
+      <div class="acciones">
+        <button class="primary" id="btnGuardarVenta">Guardar venta</button>
+        <button class="danger" id="btnCancelarVenta">Cancelar</button>
+      </div>
+
+    </div>
+  </div>
+
 
 
     <section id="gastos" class="vista">
