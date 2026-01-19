@@ -62,20 +62,50 @@
 
     <section id="productos" class="vista">
       <h1>Productos</h1>
-      <button>➕ Nuevo producto</button>
-      <table class="tabla">
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Costo</th>
-          <th>Precio Venta</th>
-          <th>Ganancia</th>
-        </tr>
-      </thead>
-      <tbody id="tablaProductos"></tbody>
-    </table>
 
+      <!-- TOOLBAR -->
+      <div class="toolbar">
+        <input
+          type="text"
+          id="buscadorProductos"
+          placeholder="🔍 Buscar producto..."
+        >
+        <button class="primary" id="btnNuevoProducto">➕ Nuevo</button>
+      </div>
+
+      <!-- TABLA -->
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Costo</th>
+            <th>Precio</th>
+            <th>Ganancia</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tablaProductos"></tbody>
+      </table>
     </section>
+
+    <!-- MODAL PRODUCTO -->
+    <div class="modal" id="modalProducto">
+      <div class="modal-content">
+        <h3 id="tituloModal">Nuevo producto</h3>
+
+        <input id="prodNombre" placeholder="Nombre">
+        <input id="prodCategoria" placeholder="Categoría">
+        <input id="prodCosto" type="number" placeholder="Costo">
+        <input id="prodPrecio" type="number" placeholder="Precio venta">
+
+        <div class="acciones">
+          <button class="primary" id="btnGuardarProducto">Guardar</button>
+          <button class="danger" id="btnCancelar">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+
 
     <section id="inventario" class="vista">
     <h1>Inventario</h1>

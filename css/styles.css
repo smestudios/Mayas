@@ -204,3 +204,38 @@ button.primary:hover {
     padding: 8px;
   }
 }
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  margin: 15px 0;
+  gap: 10px;
+}
+
+.toolbar input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 14px;
+}
+
+.tabla th {
+  background: #000b16;
+  text-align: left;
+}
+
+.tabla td, .tabla th {
+  padding: 10px;
+}
+
+.tabla tr:hover {
+  background: #f8fafc;
+}
+
+.tabla button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
