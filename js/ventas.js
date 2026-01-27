@@ -93,6 +93,13 @@ btnCancelarVenta.onclick = () => {
 /* =========================
    AGREGAR PRODUCTO A VENTA
 ========================= */
+function normalizarNumero(valor) {
+  if (valor === null || valor === undefined) return 0;
+  const limpio = String(valor).replace(/,/g, "");
+  const numero = Number(limpio);
+  return Number.isNaN(numero) ? 0 : numero;
+}
+
 function crearFilaVenta({ productoId = "", cantidadValor = "", precioValor = "" } = {}) {
   const fila = document.createElement("div");
   fila.className = "fila-venta";
@@ -113,7 +120,7 @@ function crearFilaVenta({ productoId = "", cantidadValor = "", precioValor = "" 
   precio.type = "number";
   precio.placeholder = "Precio";
   precio.readOnly = true;
-  if (precioValor) precio.value = precioValor;
+  if (precioValor) precio.value = normalizarNumero(precioValor);
 
   const btnEliminar = document.createElement("button");
   btnEliminar.textContent = "✖";
@@ -127,7 +134,7 @@ function crearFilaVenta({ productoId = "", cantidadValor = "", precioValor = "" 
   const actualizarPrecio = () => {
     const prod = productosDisponibles.find(p => p.id === select.value);
     if (prod) {
-      precio.value = prod.precio;
+      precio.value = normalizarNumero(prod.precio);
     } else {
       precio.value = "";
     }
@@ -163,8 +170,8 @@ function calcularTotales() {
   document.querySelectorAll(".fila-venta").forEach(fila => {
     const select = fila.querySelector("select");
     const inputs = fila.querySelectorAll("input");
-    const cantidad = Number(inputs[0].value);
-    const precio = Number(inputs[1].value);
+    const cantidad = normalizarNumero(inputs[0].value);
+    const precio = normalizarNumero(inputs[1].value);
 
     if (!select.value || !cantidad || !precio) return;
 
@@ -172,7 +179,7 @@ function calcularTotales() {
     if (!prod) return;
 
     total += cantidad * precio;
-    ganancia += cantidad * (precio - prod.costo);
+    ganancia += cantidad * (precio - normalizarNumero(prod.costo));
   });
 
   ventaTotalTxt.textContent = total;
@@ -226,8 +233,8 @@ function obtenerProductosVenta() {
   document.querySelectorAll(".fila-venta").forEach(fila => {
     const select = fila.querySelector("select");
     const inputs = fila.querySelectorAll("input");
-    const cantidad = Number(inputs[0].value);
-    const precio = Number(inputs[1].value);
+    const cantidad = normalizarNumero(inputs[0].value);
+    const precio = normalizarNumero(inputs[1].value);
 
     if (!select.value || !cantidad || !precio) return;
 
@@ -238,7 +245,7 @@ function obtenerProductosVenta() {
       nombre: prod.nombre,
       cantidad,
       precio,
-      costo: prod.costo,
+      costo: normalizarNumero(prod.costo),
       subtotal: cantidad * precio
     });
   });
