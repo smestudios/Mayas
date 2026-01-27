@@ -141,10 +141,14 @@ btnGuardar.onclick = async () => {
     nuevoStock = cantidad;
   }
 
+  const stockMinimo = inventarioCache[inventarioActualId]?.stockMinimo ?? 5;
+
   // Actualizar inventario
-  await updateDoc(doc(db, "inventario", inventarioActualId), {
-    stock: nuevoStock
-  });
+  await setDoc(
+    doc(db, "inventario", inventarioActualId),
+    { stock: nuevoStock, stockMinimo },
+    { merge: true }
+  );
 
   // Guardar historial (MUY IMPORTANTE)
   await addDoc(collection(db, "movimientosInventario"), {
