@@ -4,6 +4,7 @@ import {
   getDocs,
   addDoc,
   updateDoc,
+  deleteDoc,
   doc,
   getDoc,
   serverTimestamp,
@@ -22,6 +23,7 @@ const btnCancelarVenta = document.getElementById("btnCancelarVenta");
 const btnGuardarVenta = document.getElementById("btnGuardarVenta");
 const btnGuardarVentaPdf = document.getElementById("btnGuardarVentaPdf");
 const btnAgregarProducto = document.getElementById("btnAgregarProducto");
+const tituloVenta = document.getElementById("tituloVenta");
 
 const ventaCliente = document.getElementById("ventaCliente");
 const ventaTipo = document.getElementById("ventaTipo");
@@ -36,6 +38,7 @@ const ventaGananciaTxt = document.getElementById("ventaGanancia");
 let productosDisponibles = [];
 let productosVenta = [];
 let clientesDisponibles = [];
+let ventaEnEdicion = null;
 
 /* =========================
    CARGAR PRODUCTOS ACTIVOS
@@ -79,24 +82,18 @@ async function cargarClientes() {
 btnVender.onclick = async () => {
   await cargarProductos();
   await cargarClientes();
-
-  productosVenta = [];
-  contenedorProductos.innerHTML = "";
-  ventaCliente.value = "";
-  ventaTotalTxt.textContent = "0";
-  ventaGananciaTxt.textContent = "0";
-
+  prepararNuevaVenta();
   modalVenta.classList.add("activo");
 };
 
 btnCancelarVenta.onclick = () => {
-  modalVenta.classList.remove("activo");
+  cerrarModalVenta();
 };
 
 /* =========================
    AGREGAR PRODUCTO A VENTA
 ========================= */
-btnAgregarProducto.onclick = () => {
+function crearFilaVenta({ productoId = "", cantidadValor = "", precioValor = "" } = {}) {
   const fila = document.createElement("div");
   fila.className = "fila-venta";
 
@@ -110,10 +107,12 @@ btnAgregarProducto.onclick = () => {
   cantidad.type = "number";
   cantidad.min = 1;
   cantidad.placeholder = "Cantidad";
+  if (cantidadValor) cantidad.value = cantidadValor;
 
   const precio = document.createElement("input");
   precio.type = "number";
   precio.placeholder = "Precio";
+  if (precioValor) precio.value = precioValor;
 
   const btnEliminar = document.createElement("button");
   btnEliminar.textContent = "✖";
@@ -135,6 +134,18 @@ btnAgregarProducto.onclick = () => {
 
   fila.append(select, cantidad, precio, btnEliminar);
   contenedorProductos.appendChild(fila);
+  if (productoId) {
+    select.value = productoId;
+    if (!precio.value) {
+      const prod = productosDisponibles.find(p => p.id === productoId);
+      if (prod) precio.value = prod.precio;
+    }
+  }
+  calcularTotales();
+};
+
+btnAgregarProducto.onclick = () => {
+  crearFilaVenta();
 };
 
 /* =========================
@@ -171,6 +182,24 @@ function formatearMoneda(valor) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
+}
+
+function prepararNuevaVenta() {
+  ventaEnEdicion = null;
+  productosVenta = [];
+  contenedorProductos.innerHTML = "";
+  ventaCliente.value = "";
+  ventaTipo.value = "mostrador";
+  ventaTotalTxt.textContent = "0";
+  ventaGananciaTxt.textContent = "0";
+  tituloVenta.textContent = "Nueva venta";
+  btnGuardarVenta.textContent = "Guardar venta";
+  btnGuardarVentaPdf.disabled = false;
+}
+
+function cerrarModalVenta() {
+  modalVenta.classList.remove("activo");
+  prepararNuevaVenta();
 }
 
 function obtenerProductosVenta() {
@@ -249,6 +278,20 @@ async function validarStock(productos) {
   return true;
 }
 
+async function validarStockDiferencias(diferencias) {
+  for (const diff of diferencias) {
+    if (diff.delta <= 0) continue;
+    const invRef = doc(db, "inventario", diff.productoId);
+    const snap = await getDoc(invRef);
+    const stockActual = snap.exists() ? Number(snap.data().stock || 0) : 0;
+    if (stockActual < diff.delta) {
+      alert(`Stock insuficiente para ${diff.nombre}`);
+      return false;
+    }
+  }
+  return true;
+}
+
 async function descontarInventario(productos) {
   for (const p of productos) {
     const invRef = doc(db, "inventario", p.productoId);
@@ -268,6 +311,78 @@ async function descontarInventario(productos) {
       );
     });
   }
+}
+
+async function ajustarInventarioPorDiferencias(diferencias) {
+  for (const diff of diferencias) {
+    const invRef = doc(db, "inventario", diff.productoId);
+    await runTransaction(db, async transaction => {
+      const snap = await transaction.get(invRef);
+      const stockActual = snap.exists() ? Number(snap.data().stock || 0) : 0;
+      const nuevoStock = stockActual - diff.delta;
+
+      if (nuevoStock < 0) {
+        throw new Error(`Stock insuficiente para ${diff.nombre}`);
+      }
+
+      transaction.set(
+        invRef,
+        { stock: nuevoStock, stockMinimo: snap.data()?.stockMinimo ?? 5 },
+        { merge: true }
+      );
+    });
+  }
+}
+
+async function reponerInventario(productos) {
+  for (const p of productos) {
+    const invRef = doc(db, "inventario", p.productoId);
+    await runTransaction(db, async transaction => {
+      const snap = await transaction.get(invRef);
+      const stockActual = snap.exists() ? Number(snap.data().stock || 0) : 0;
+      const nuevoStock = stockActual + p.cantidad;
+
+      transaction.set(
+        invRef,
+        { stock: nuevoStock, stockMinimo: snap.data()?.stockMinimo ?? 5 },
+        { merge: true }
+      );
+    });
+  }
+}
+
+function calcularDiferenciasInventario(original = [], actual = []) {
+  const originalMap = new Map();
+  const actualMap = new Map();
+
+  original.forEach(p => {
+    originalMap.set(p.productoId, p);
+  });
+
+  actual.forEach(p => {
+    actualMap.set(p.productoId, p);
+  });
+
+  const ids = new Set([...originalMap.keys(), ...actualMap.keys()]);
+  const diferencias = [];
+
+  ids.forEach(id => {
+    const antes = originalMap.get(id);
+    const despues = actualMap.get(id);
+    const cantidadAntes = antes?.cantidad || 0;
+    const cantidadDespues = despues?.cantidad || 0;
+    const delta = cantidadDespues - cantidadAntes;
+
+    if (delta === 0) return;
+
+    diferencias.push({
+      productoId: id,
+      nombre: despues?.nombre || antes?.nombre || "Producto",
+      delta
+    });
+  });
+
+  return diferencias;
 }
 
 function generarReciboPDF(venta, ventaId) {
@@ -319,6 +434,41 @@ async function registrarVenta({ descargarPdf }) {
   const venta = obtenerProductosVenta();
   if (!venta) return;
 
+  if (ventaEnEdicion) {
+    const diferencias = calcularDiferenciasInventario(
+      ventaEnEdicion.data.productos,
+      venta.productos
+    );
+    const stockValido = await validarStockDiferencias(diferencias);
+    if (!stockValido) return;
+
+    try {
+      await ajustarInventarioPorDiferencias(diferencias);
+    } catch (error) {
+      alert("No se pudo actualizar el inventario. Revise el stock.");
+      return;
+    }
+
+    await updateDoc(doc(db, "ventas", ventaEnEdicion.id), {
+      fecha: ventaEnEdicion.data.fecha || serverTimestamp(),
+      cliente: venta.cliente,
+      clienteId: venta.clienteId,
+      tipo: venta.tipo,
+      productos: venta.productos,
+      total: venta.total,
+      costoTotal: venta.costoTotal,
+      ganancia: venta.ganancia,
+      actualizadoEn: serverTimestamp()
+    });
+
+    if (descargarPdf) {
+      generarReciboPDF(venta, ventaEnEdicion.id);
+    }
+
+    cerrarModalVenta();
+    return;
+  }
+
   const stockValido = await validarStock(venta.productos);
   if (!stockValido) return;
 
@@ -346,7 +496,7 @@ async function registrarVenta({ descargarPdf }) {
     generarReciboPDF(venta, docRef.id);
   }
 
-  modalVenta.classList.remove("activo");
+  cerrarModalVenta();
 }
 
 btnGuardarVenta.onclick = () => registrarVenta({ descargarPdf: false });
@@ -371,12 +521,67 @@ onSnapshot(collection(db, "ventas"), snap => {
       <td>${v.cliente}</td>
       <td>${v.tipo}</td>
       <td>${productosTxt}</td>
-      <td>$${v.total}</td>
+      <td>$${formatearMoneda(v.total)}</td>
       <td class="${v.ganancia >= 0 ? "ganancia-positiva" : "ganancia-negativa"}">
-        $${v.ganancia}
+        $${formatearMoneda(v.ganancia)}
       </td>
+      <td></td>
     `;
+
+    const accionesTd = tr.querySelector("td:last-child");
+    const accionesContenedor = document.createElement("div");
+    accionesContenedor.className = "acciones-venta";
+
+    const btnEditar = document.createElement("button");
+    btnEditar.className = "editar";
+    btnEditar.textContent = "✏️";
+    btnEditar.title = "Editar venta";
+    btnEditar.onclick = () => abrirModalEdicion(docu.id, v);
+
+    const btnEliminar = document.createElement("button");
+    btnEliminar.className = "eliminar";
+    btnEliminar.textContent = "🗑️";
+    btnEliminar.title = "Eliminar venta";
+    btnEliminar.onclick = () => eliminarVenta(docu.id, v);
+
+    accionesContenedor.append(btnEditar, btnEliminar);
+    accionesTd.appendChild(accionesContenedor);
 
     tablaVentas.appendChild(tr);
   });
 });
+
+async function abrirModalEdicion(ventaId, ventaData) {
+  await cargarProductos();
+  await cargarClientes();
+
+  ventaEnEdicion = { id: ventaId, data: ventaData };
+  contenedorProductos.innerHTML = "";
+
+  ventaCliente.value = ventaData.clienteId || "";
+  ventaTipo.value = ventaData.tipo || "mostrador";
+
+  (ventaData.productos || []).forEach(p => {
+    crearFilaVenta({
+      productoId: p.productoId,
+      cantidadValor: p.cantidad,
+      precioValor: p.precio
+    });
+  });
+
+  tituloVenta.textContent = "Editar venta";
+  btnGuardarVenta.textContent = "Guardar cambios";
+  modalVenta.classList.add("activo");
+}
+
+async function eliminarVenta(ventaId, ventaData) {
+  const confirmado = confirm("¿Deseas eliminar esta venta?");
+  if (!confirmado) return;
+
+  try {
+    await reponerInventario(ventaData.productos || []);
+    await deleteDoc(doc(db, "ventas", ventaId));
+  } catch (error) {
+    alert("No se pudo eliminar la venta. Intenta de nuevo.");
+  }
+}
