@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sistema de Ventas Mayas</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -82,18 +83,20 @@
       </div>
 
       <!-- TABLA -->
-      <table class="tabla">
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Costo</th>
-            <th>Precio</th>
-            <th>Ganancia</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="tablaProductos"></tbody>
-      </table>
+      <div class="table-wrapper">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Costo</th>
+              <th>Precio</th>
+              <th>Ganancia</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaProductos"></tbody>
+        </table>
+      </div>
     </section>
 
     <!-- MODAL PRODUCTO -->
@@ -118,20 +121,22 @@
     <section id="inventario" class="vista">
       <h1>Inventario</h1>
 
-      <table class="tabla">
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Stock actual</th>
-            <th>Stock mínimo</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="tablaInventario">
-          <!-- JS llena esto -->
-        </tbody>
-      </table>
+      <div class="table-wrapper">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Stock actual</th>
+              <th>Stock mínimo</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaInventario">
+            <!-- JS llena esto -->
+          </tbody>
+        </table>
+      </div>
     </section>
 
 
@@ -405,10 +410,12 @@ function mostrar(id) {
 const sidebar = document.getElementById("sidebar");
 const sidebarOverlay = document.getElementById("sidebarOverlay");
 const menuToggle = document.getElementById("menuToggle");
+const body = document.body;
 
 function toggleSidebar() {
   sidebar.classList.toggle("activa");
   sidebarOverlay.classList.toggle("activa");
+  body.classList.toggle("sidebar-open");
 }
 
 menuToggle.addEventListener("click", toggleSidebar);
@@ -418,6 +425,7 @@ document.querySelectorAll(".sidebar button").forEach(btn => {
   btn.addEventListener("click", () => {
     sidebar.classList.remove("activa");
     sidebarOverlay.classList.remove("activa");
+    body.classList.remove("sidebar-open");
   });
 });
 </script>

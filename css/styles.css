@@ -262,6 +262,10 @@ button.secondary:hover {
     flex-direction: column;
   }
 
+  body.sidebar-open {
+    overflow: hidden;
+  }
+
   .sidebar {
     position: fixed;
     top: 0;
