@@ -173,6 +173,7 @@
       <button class="primary" id="btnVender">🛒 Vender</button>
     </div>
 
+    <div class="table-wrapper">
     <table class="tabla">
       <thead>
         <tr>
@@ -182,17 +183,19 @@
           <th>Productos</th>
           <th>Total</th>
           <th>Ganancia</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody id="tablaVentas"></tbody>
     </table>
+    </div>
   </section>
 
   <!-- MODAL VENTA  -->
   <div class="modal" id="modalVenta">
     <div class="modal-content" style="max-width:600px">
 
-      <h3>Nueva venta</h3>
+      <h3 id="tituloVenta">Nueva venta</h3>
 
       <select id="ventaCliente">
         <option value="">Selecciona cliente / tienda</option>
