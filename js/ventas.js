@@ -112,6 +112,7 @@ function crearFilaVenta({ productoId = "", cantidadValor = "", precioValor = "" 
   const precio = document.createElement("input");
   precio.type = "number";
   precio.placeholder = "Precio";
+  precio.readOnly = true;
   if (precioValor) precio.value = precioValor;
 
   const btnEliminar = document.createElement("button");
@@ -123,23 +124,27 @@ function crearFilaVenta({ productoId = "", cantidadValor = "", precioValor = "" 
     calcularTotales();
   };
 
-  select.onchange = () => {
+  const actualizarPrecio = () => {
     const prod = productosDisponibles.find(p => p.id === select.value);
-    if (prod) precio.value = prod.precio;
+    if (prod) {
+      precio.value = prod.precio;
+    } else {
+      precio.value = "";
+    }
+  };
+
+  select.onchange = () => {
+    actualizarPrecio();
     calcularTotales();
   };
 
   cantidad.oninput = calcularTotales;
-  precio.oninput = calcularTotales;
 
   fila.append(select, cantidad, precio, btnEliminar);
   contenedorProductos.appendChild(fila);
   if (productoId) {
     select.value = productoId;
-    if (!precio.value) {
-      const prod = productosDisponibles.find(p => p.id === productoId);
-      if (prod) precio.value = prod.precio;
-    }
+    if (!precio.value) actualizarPrecio();
   }
   calcularTotales();
 };
