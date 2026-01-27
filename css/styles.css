@@ -384,7 +384,8 @@ button.secondary:hover {
   margin-bottom: 15px;
 }
 
-.modal-content input {
+.modal-content input,
+.modal-content select {
   width: 100%;
   padding: 10px;
   margin-bottom: 10px;
@@ -447,7 +448,8 @@ button.secondary:hover {
   margin-bottom: 15px;
 }
 
-.modal-content input {
+.modal-content input,
+.modal-content select {
   width: 100%;
   padding: 10px;
   margin-bottom: 12px;

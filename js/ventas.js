@@ -35,6 +35,7 @@ const ventaGananciaTxt = document.getElementById("ventaGanancia");
 ========================= */
 let productosDisponibles = [];
 let productosVenta = [];
+let clientesDisponibles = [];
 
 /* =========================
    CARGAR PRODUCTOS ACTIVOS
@@ -56,11 +57,28 @@ async function cargarProductos() {
   });
 }
 
+async function cargarClientes() {
+  const snap = await getDocs(collection(db, "clientes"));
+  clientesDisponibles = [];
+  ventaCliente.innerHTML = `<option value="">Selecciona cliente / tienda</option>`;
+
+  snap.forEach(d => {
+    const c = d.data();
+    if (!c.activo) return;
+    clientesDisponibles.push({ id: d.id, nombre: c.nombre });
+    const option = document.createElement("option");
+    option.value = d.id;
+    option.textContent = c.nombre;
+    ventaCliente.appendChild(option);
+  });
+}
+
 /* =========================
    ABRIR / CERRAR MODAL
 ========================= */
 btnVender.onclick = async () => {
   await cargarProductos();
+  await cargarClientes();
 
   productosVenta = [];
   contenedorProductos.innerHTML = "";
@@ -157,7 +175,15 @@ function formatearMoneda(valor) {
 
 function obtenerProductosVenta() {
   if (!ventaCliente.value) {
-    alert("Ingrese cliente");
+    alert("Seleccione cliente");
+    return null;
+  }
+
+  const clienteSeleccionado = clientesDisponibles.find(
+    c => c.id === ventaCliente.value
+  );
+  if (!clienteSeleccionado) {
+    alert("Seleccione un cliente válido");
     return null;
   }
 
@@ -199,7 +225,8 @@ function obtenerProductosVenta() {
   const ganancia = total - costoTotal;
 
   return {
-    cliente: ventaCliente.value.trim(),
+    cliente: clienteSeleccionado.nombre,
+    clienteId: ventaCliente.value,
     tipo: ventaTipo.value,
     productos,
     total,
@@ -298,6 +325,7 @@ async function registrarVenta({ descargarPdf }) {
   const docRef = await addDoc(collection(db, "ventas"), {
     fecha: serverTimestamp(),
     cliente: venta.cliente,
+    clienteId: venta.clienteId,
     tipo: venta.tipo,
     productos: venta.productos,
     total: venta.total,
