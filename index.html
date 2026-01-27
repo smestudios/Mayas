@@ -236,35 +236,88 @@
     <section id="gastos" class="vista">
     <h1>Gastos</h1>
 
-    <table class="tabla">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Descripción</th>
-          <th>Categoría</th>
-          <th>Monto</th>
-        </tr>
-      </thead>
-      <tbody id="tablaGastos"></tbody>
-    </table>
+    <div class="toolbar">
+      <button class="primary" id="btnNuevoGasto">➕ Nuevo</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Descripción</th>
+            <th>Categoría</th>
+            <th>Monto</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tablaGastos"></tbody>
+      </table>
+    </div>
   </section>
+
+  <div class="modal" id="modalGasto">
+    <div class="modal-content">
+      <h3 id="tituloGasto">Nuevo gasto</h3>
+
+      <input id="gastoFecha" type="date">
+      <input id="gastoDescripcion" placeholder="Descripción">
+      <input id="gastoCategoria" placeholder="Categoría">
+      <input id="gastoMonto" type="number" placeholder="Monto" min="0">
+
+      <div class="acciones">
+        <button class="primary" id="btnGuardarGasto">Guardar</button>
+        <button class="danger" id="btnCancelarGasto">Cancelar</button>
+      </div>
+    </div>
+  </div>
 
   <section id="clientes" class="vista">
     <h1>Clientes</h1>
 
-    <table class="tabla">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Tipo</th>
-          <th>Teléfono</th>
-          <th>Dirección</th>
-          <th>Estado</th>
-        </tr>
-      </thead>
-      <tbody id="tablaClientes"></tbody>
-    </table>
+    <div class="toolbar">
+      <button class="primary" id="btnNuevoCliente">➕ Nuevo</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Tipo</th>
+            <th>Teléfono</th>
+            <th>Dirección</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tablaClientes"></tbody>
+      </table>
+    </div>
   </section>
+
+  <div class="modal" id="modalCliente">
+    <div class="modal-content">
+      <h3 id="tituloCliente">Nuevo cliente</h3>
+
+      <input id="clienteNombre" placeholder="Nombre">
+      <select id="clienteTipo">
+        <option value="cliente">Cliente</option>
+        <option value="tienda">Tienda</option>
+      </select>
+      <input id="clienteTelefono" placeholder="Teléfono">
+      <input id="clienteDireccion" placeholder="Dirección">
+      <select id="clienteEstado">
+        <option value="true">Activo</option>
+        <option value="false">Inactivo</option>
+      </select>
+
+      <div class="acciones">
+        <button class="primary" id="btnGuardarCliente">Guardar</button>
+        <button class="danger" id="btnCancelarCliente">Cancelar</button>
+      </div>
+    </div>
+  </div>
 
 
   </main>
