@@ -26,6 +26,7 @@ const pedidoCliente = document.getElementById("pedidoCliente");
 const pedidoTipo = document.getElementById("pedidoTipo");
 const contenedorProductos = document.getElementById("productosPedido");
 const tituloPedido = document.getElementById("tituloPedido");
+const pedidoObservaciones = document.getElementById("pedidoObservaciones");
 
 const pedidoTotalTxt = document.getElementById("pedidoTotal");
 const pedidoGananciaTxt = document.getElementById("pedidoGanancia");
@@ -98,6 +99,7 @@ function prepararNuevoPedido() {
   contenedorProductos.innerHTML = "";
   pedidoCliente.value = "";
   pedidoTipo.value = "mostrador";
+  pedidoObservaciones.value = "";
   pedidoTotalTxt.textContent = "0";
   pedidoGananciaTxt.textContent = "0";
   tituloPedido.textContent = "Nuevo pedido";
@@ -262,6 +264,7 @@ function obtenerProductosPedido() {
     cliente: clienteSeleccionado.nombre,
     clienteId: pedidoCliente.value,
     tipo: pedidoTipo.value,
+    observaciones: pedidoObservaciones.value.trim(),
     productos,
     total,
     costoTotal,
@@ -319,6 +322,7 @@ async function registrarPedido() {
       cliente: pedido.cliente,
       clienteId: pedido.clienteId,
       tipo: pedido.tipo,
+      observaciones: pedido.observaciones,
       productos: pedido.productos,
       total: pedido.total,
       costoTotal: pedido.costoTotal,
@@ -334,6 +338,7 @@ async function registrarPedido() {
     cliente: pedido.cliente,
     clienteId: pedido.clienteId,
     tipo: pedido.tipo,
+    observaciones: pedido.observaciones,
     productos: pedido.productos,
     total: pedido.total,
     costoTotal: pedido.costoTotal,
@@ -368,6 +373,7 @@ async function entregarPedido(pedidoId, pedidoData) {
     cliente: pedidoData.cliente,
     clienteId: pedidoData.clienteId,
     tipo: pedidoData.tipo,
+    observaciones: pedidoData.observaciones || "",
     productos: pedidoData.productos || [],
     total: pedidoData.total || 0,
     costoTotal: pedidoData.costoTotal || 0,
@@ -386,6 +392,7 @@ async function abrirModalEdicion(pedidoId, pedidoData) {
 
   pedidoCliente.value = pedidoData.clienteId || "";
   pedidoTipo.value = pedidoData.tipo || "mostrador";
+  pedidoObservaciones.value = pedidoData.observaciones || "";
 
   (pedidoData.productos || []).forEach(p => {
     crearFilaPedido({
@@ -430,7 +437,7 @@ onSnapshot(collection(db, "pedidos"), snap => {
     tr.innerHTML = `
       <td>${p.fecha?.toDate().toLocaleDateString() || ""}</td>
       <td>${p.cliente}</td>
-      <td>${p.tipo}</td>
+      <td>${p.observaciones || ""}</td>
       <td>${productosTxt}</td>
       <td>$${formatearMoneda(p.total)}</td>
       <td>${p.estado || "pendiente"}</td>
