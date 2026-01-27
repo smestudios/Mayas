@@ -52,6 +52,8 @@ body {
 .content {
   flex: 1;
   padding: 30px;
+  max-width: 1200px;
+  width: 100%;
 }
 
 .topbar {
@@ -334,6 +336,7 @@ button.secondary:hover {
   justify-content: space-between;
   margin: 15px 0;
   gap: 10px;
+  align-items: center;
 }
 
 .toolbar input {
@@ -357,7 +360,7 @@ button.secondary:hover {
 .tabla td:last-child,
 .tabla th:last-child {
   text-align: center;
-  width: 120px;
+  width: 140px;
 }
 
 .tabla td button {
@@ -402,6 +405,33 @@ button.secondary:hover {
   border: none;
   cursor: pointer;
   font-size: 16px;
+}
+
+.tabla .acciones-venta {
+  display: inline-flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.tabla .acciones-venta button {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: #f8fafc;
+}
+
+.tabla .acciones-venta button.editar {
+  color: #1d4ed8;
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+.tabla .acciones-venta button.eliminar {
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.2);
+}
+
+.tabla .acciones-venta button:hover {
+  background: #e2e8f0;
 }
 
 
