@@ -7,7 +7,7 @@
 </head>
 <body>
 
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <h2>📊 Mayas</h2>
     <nav>
       <button onclick="mostrar('dashboard')">Dashboard</button>
@@ -18,8 +18,15 @@
       <button onclick="mostrar('clientes')">Clientes</button>
     </nav>
   </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <main class="content">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">
+        ☰
+      </button>
+      <span class="topbar-title">Sistema de Ventas Mayas</span>
+    </header>
     <section id="dashboard" class="vista activa">
       <h1>Resumen General</h1>
       <div class="cards">
@@ -205,12 +212,18 @@
 
       <hr>
 
-      <p><strong>Total:</strong> $<span id="ventaTotal">0</span></p>
-      <p><strong>Ganancia:</strong> $<span id="ventaGanancia">0</span></p>
-
-      <div class="acciones">
-        <button class="primary" id="btnGuardarVenta">Guardar venta</button>
-        <button class="danger" id="btnCancelarVenta">Cancelar</button>
+      <div class="venta-resumen">
+        <div class="venta-totales">
+          <p><strong>Total:</strong> $<span id="ventaTotal">0</span></p>
+          <p><strong>Ganancia:</strong> $<span id="ventaGanancia">0</span></p>
+        </div>
+        <div class="acciones venta-acciones">
+          <button class="secondary" id="btnGuardarVentaPdf">
+            Guardar y descargar PDF
+          </button>
+          <button class="primary" id="btnGuardarVenta">Guardar venta</button>
+          <button class="danger" id="btnCancelarVenta">Cancelar</button>
+        </div>
       </div>
 
     </div>
@@ -259,7 +272,27 @@ function mostrar(id) {
   document.querySelectorAll('.vista').forEach(v => v.classList.remove('activa'));
   document.getElementById(id).classList.add('activa');
 }
+
+const sidebar = document.getElementById("sidebar");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
+const menuToggle = document.getElementById("menuToggle");
+
+function toggleSidebar() {
+  sidebar.classList.toggle("activa");
+  sidebarOverlay.classList.toggle("activa");
+}
+
+menuToggle.addEventListener("click", toggleSidebar);
+sidebarOverlay.addEventListener("click", toggleSidebar);
+
+document.querySelectorAll(".sidebar button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    sidebar.classList.remove("activa");
+    sidebarOverlay.classList.remove("activa");
+  });
+});
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script type="module" src="js/productos.js"></script>
 <script type="module" src="js/inventario.js"></script>
 <script type="module" src="js/ventas.js"></script>

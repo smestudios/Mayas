@@ -5,7 +5,9 @@ import {
   addDoc,
   updateDoc,
   doc,
+  getDoc,
   serverTimestamp,
+  runTransaction,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -18,6 +20,7 @@ const btnVender = document.getElementById("btnVender");
 const modalVenta = document.getElementById("modalVenta");
 const btnCancelarVenta = document.getElementById("btnCancelarVenta");
 const btnGuardarVenta = document.getElementById("btnGuardarVenta");
+const btnGuardarVentaPdf = document.getElementById("btnGuardarVentaPdf");
 const btnAgregarProducto = document.getElementById("btnAgregarProducto");
 
 const ventaCliente = document.getElementById("ventaCliente");
@@ -143,12 +146,19 @@ function calcularTotales() {
 }
 
 /* =========================
-   GUARDAR VENTA
+   UTILIDADES
 ========================= */
-btnGuardarVenta.onclick = async () => {
+function formatearMoneda(valor) {
+  return Number(valor || 0).toLocaleString("es-MX", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function obtenerProductosVenta() {
   if (!ventaCliente.value) {
     alert("Ingrese cliente");
-    return;
+    return null;
   }
 
   const productos = [];
@@ -175,7 +185,7 @@ btnGuardarVenta.onclick = async () => {
 
   if (productos.length === 0) {
     alert("Agregue al menos un producto");
-    return;
+    return null;
   }
 
   let total = 0;
@@ -188,27 +198,131 @@ btnGuardarVenta.onclick = async () => {
 
   const ganancia = total - costoTotal;
 
-  // Guardar venta
-  await addDoc(collection(db, "ventas"), {
-    fecha: serverTimestamp(),
-    cliente: ventaCliente.value,
+  return {
+    cliente: ventaCliente.value.trim(),
     tipo: ventaTipo.value,
     productos,
     total,
     costoTotal,
     ganancia
-  });
+  };
+};
 
-  // Descontar inventario
+async function validarStock(productos) {
   for (const p of productos) {
     const invRef = doc(db, "inventario", p.productoId);
-    await updateDoc(invRef, {
-      stock: p => p.stock - p.cantidad
+    const snap = await getDoc(invRef);
+    const stockActual = snap.exists() ? Number(snap.data().stock || 0) : 0;
+
+    if (stockActual < p.cantidad) {
+      alert(`Stock insuficiente para ${p.nombre}`);
+      return false;
+    }
+  }
+  return true;
+}
+
+async function descontarInventario(productos) {
+  for (const p of productos) {
+    const invRef = doc(db, "inventario", p.productoId);
+    await runTransaction(db, async transaction => {
+      const snap = await transaction.get(invRef);
+      const stockActual = snap.exists() ? Number(snap.data().stock || 0) : 0;
+      const nuevoStock = stockActual - p.cantidad;
+
+      if (nuevoStock < 0) {
+        throw new Error(`Stock insuficiente para ${p.nombre}`);
+      }
+
+      transaction.set(
+        invRef,
+        { stock: nuevoStock, stockMinimo: snap.data()?.stockMinimo ?? 5 },
+        { merge: true }
+      );
     });
+  }
+}
+
+function generarReciboPDF(venta, ventaId) {
+  if (!window.jspdf) {
+    alert("No se pudo generar el PDF. Verifique la conexión.");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const docPdf = new jsPDF();
+  const fecha = new Date().toLocaleString("es-MX");
+
+  docPdf.setFontSize(16);
+  docPdf.text("Recibo de venta", 14, 20);
+  docPdf.setFontSize(11);
+  docPdf.text(`Fecha: ${fecha}`, 14, 30);
+  docPdf.text(`Cliente: ${venta.cliente}`, 14, 38);
+  docPdf.text(`Tipo: ${venta.tipo}`, 14, 46);
+  docPdf.text(`Folio: ${ventaId}`, 14, 54);
+
+  let y = 66;
+  docPdf.setFontSize(12);
+  docPdf.text("Detalle:", 14, y);
+  y += 8;
+
+  venta.productos.forEach(p => {
+    docPdf.setFontSize(10);
+    docPdf.text(
+      `${p.nombre} x${p.cantidad} - $${formatearMoneda(p.subtotal)}`,
+      14,
+      y
+    );
+    y += 6;
+  });
+
+  y += 4;
+  docPdf.setFontSize(12);
+  docPdf.text(`Total: $${formatearMoneda(venta.total)}`, 14, y);
+  y += 8;
+  docPdf.text(`Ganancia: $${formatearMoneda(venta.ganancia)}`, 14, y);
+
+  docPdf.save(`venta-${ventaId}.pdf`);
+}
+
+/* =========================
+   GUARDAR VENTA
+========================= */
+async function registrarVenta({ descargarPdf }) {
+  const venta = obtenerProductosVenta();
+  if (!venta) return;
+
+  const stockValido = await validarStock(venta.productos);
+  if (!stockValido) return;
+
+  const docRef = await addDoc(collection(db, "ventas"), {
+    fecha: serverTimestamp(),
+    cliente: venta.cliente,
+    tipo: venta.tipo,
+    productos: venta.productos,
+    total: venta.total,
+    costoTotal: venta.costoTotal,
+    ganancia: venta.ganancia
+  });
+
+  try {
+    await descontarInventario(venta.productos);
+  } catch (error) {
+    await updateDoc(doc(db, "ventas", docRef.id), {
+      estado: "inventario_no_actualizado"
+    });
+    alert("No se pudo descontar inventario. Revise el stock.");
+  }
+
+  if (descargarPdf) {
+    generarReciboPDF(venta, docRef.id);
   }
 
   modalVenta.classList.remove("activo");
-};
+}
+
+btnGuardarVenta.onclick = () => registrarVenta({ descargarPdf: false });
+btnGuardarVentaPdf.onclick = () => registrarVenta({ descargarPdf: true });
 
 /* =========================
    HISTORIAL DE VENTAS
