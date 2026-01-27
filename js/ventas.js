@@ -54,7 +54,7 @@ async function cargarProductos() {
         id: d.id,
         nombre: p.nombre,
         costo: p.costo,
-        precio: p.precio
+        precio: p.precioVenta ?? p.precio
       });
     }
   });
