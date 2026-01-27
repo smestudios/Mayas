@@ -167,7 +167,7 @@ function calcularTotales() {
   let total = 0;
   let ganancia = 0;
 
-  document.querySelectorAll(".fila-venta").forEach(fila => {
+  contenedorProductos.querySelectorAll(".fila-venta").forEach(fila => {
     const select = fila.querySelector("select");
     const inputs = fila.querySelectorAll("input");
     const cantidad = normalizarNumero(inputs[0].value);
@@ -230,7 +230,7 @@ function obtenerProductosVenta() {
 
   const productos = [];
 
-  document.querySelectorAll(".fila-venta").forEach(fila => {
+  contenedorProductos.querySelectorAll(".fila-venta").forEach(fila => {
     const select = fila.querySelector("select");
     const inputs = fila.querySelectorAll("input");
     const cantidad = normalizarNumero(inputs[0].value);
