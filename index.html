@@ -14,6 +14,7 @@
       <button onclick="mostrar('productos')">Productos</button>
       <button onclick="mostrar('inventario')">Inventario</button>
       <button onclick="mostrar('ventas')">Ventas</button>
+      <button onclick="mostrar('pedidos')">Pedidos</button>
       <button onclick="mostrar('gastos')">Gastos</button>
       <button onclick="mostrar('clientes')">Clientes</button>
     </nav>
@@ -173,6 +174,7 @@
       <button class="primary" id="btnVender">🛒 Vender</button>
     </div>
 
+    <div class="table-wrapper">
     <table class="tabla">
       <thead>
         <tr>
@@ -182,17 +184,83 @@
           <th>Productos</th>
           <th>Total</th>
           <th>Ganancia</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody id="tablaVentas"></tbody>
     </table>
+    </div>
   </section>
+
+  <section id="pedidos" class="vista">
+    <h1>Pedidos</h1>
+
+    <div class="toolbar">
+      <button class="primary" id="btnNuevoPedido">📦 Nuevo pedido</button>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Cliente</th>
+            <th>Tipo</th>
+            <th>Productos</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tablaPedidos"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="modal" id="modalPedido">
+    <div class="modal-content" style="max-width:600px">
+
+      <h3 id="tituloPedido">Nuevo pedido</h3>
+
+      <select id="pedidoCliente">
+        <option value="">Selecciona cliente / tienda</option>
+      </select>
+
+      <select id="pedidoTipo">
+        <option value="mostrador">Mostrador</option>
+        <option value="tienda">Tienda</option>
+        <option value="online">Online</option>
+      </select>
+
+      <hr>
+
+      <div id="productosPedido"></div>
+
+      <button class="secondary" id="btnAgregarProductoPedido">
+        ➕ Agregar producto
+      </button>
+
+      <hr>
+
+      <div class="venta-resumen">
+        <div class="venta-totales">
+          <p><strong>Total:</strong> $<span id="pedidoTotal">0</span></p>
+          <p><strong>Ganancia:</strong> $<span id="pedidoGanancia">0</span></p>
+        </div>
+        <div class="acciones venta-acciones">
+          <button class="primary" id="btnGuardarPedido">Guardar pedido</button>
+          <button class="danger" id="btnCancelarPedido">Cancelar</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
 
   <!-- MODAL VENTA  -->
   <div class="modal" id="modalVenta">
     <div class="modal-content" style="max-width:600px">
 
-      <h3>Nueva venta</h3>
+      <h3 id="tituloVenta">Nueva venta</h3>
 
       <select id="ventaCliente">
         <option value="">Selecciona cliente / tienda</option>
@@ -351,6 +419,7 @@ document.querySelectorAll(".sidebar button").forEach(btn => {
 <script type="module" src="js/productos.js"></script>
 <script type="module" src="js/inventario.js"></script>
 <script type="module" src="js/ventas.js"></script>
+<script type="module" src="js/pedidos.js"></script>
 <script type="module" src="js/gastos.js"></script>
 <script type="module" src="js/clientes.js"></script>
 <script type="module" src="js/dashboard.js"></script>

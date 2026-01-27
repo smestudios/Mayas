@@ -4,7 +4,8 @@ import {
   getDocs,
   query,
   where,
-  Timestamp
+  Timestamp,
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ==========================
@@ -15,22 +16,22 @@ const elCostos = document.getElementById("totalCostos");
 const elGastos = document.getElementById("totalGastos");
 const elUtilidad = document.getElementById("utilidad");
 
-async function cargarDashboardGeneral() {
-  let totalVentas = 0;
-  let totalCostos = 0;
-  let totalGastos = 0;
+let ventasCache = [];
+let gastosCache = [];
 
-  const ventasSnap = await getDocs(collection(db, "ventas"));
-  ventasSnap.forEach(doc => {
-    const v = doc.data();
-    totalVentas += v.totalVenta || 0;
-    totalCostos += v.totalCosto || 0;
-  });
-
-  const gastosSnap = await getDocs(collection(db, "gastos"));
-  gastosSnap.forEach(doc => {
-    totalGastos += doc.data().monto || 0;
-  });
+function renderDashboardGeneral() {
+  const totalVentas = ventasCache.reduce(
+    (acc, venta) => acc + (venta.total || 0),
+    0
+  );
+  const totalCostos = ventasCache.reduce(
+    (acc, venta) => acc + (venta.costoTotal || 0),
+    0
+  );
+  const totalGastos = gastosCache.reduce(
+    (acc, gasto) => acc + (gasto.monto || 0),
+    0
+  );
 
   const utilidad = totalVentas - totalCostos - totalGastos;
 
@@ -39,6 +40,18 @@ async function cargarDashboardGeneral() {
   elGastos.textContent = `$${totalGastos.toLocaleString()}`;
   elUtilidad.textContent = `$${utilidad.toLocaleString()}`;
   elUtilidad.style.color = utilidad >= 0 ? "#16a34a" : "#dc2626";
+}
+
+function escucharDashboardGeneral() {
+  onSnapshot(collection(db, "ventas"), snap => {
+    ventasCache = snap.docs.map(doc => doc.data());
+    renderDashboardGeneral();
+  });
+
+  onSnapshot(collection(db, "gastos"), snap => {
+    gastosCache = snap.docs.map(doc => doc.data());
+    renderDashboardGeneral();
+  });
 }
 
 // ==========================
@@ -67,8 +80,8 @@ async function cargarDashboardFiltrado(fechaInicio, fechaFin) {
   const ventasSnap = await getDocs(ventasQuery);
   ventasSnap.forEach(doc => {
     const v = doc.data();
-    ventas += v.totalVenta || 0;
-    costos += v.totalCosto || 0;
+    ventas += v.total || 0;
+    costos += v.costoTotal || 0;
   });
 
   const gastosQuery = query(
@@ -115,4 +128,4 @@ btnFiltrar.addEventListener("click", () => {
 // ==========================
 // CARGA INICIAL
 // ==========================
-cargarDashboardGeneral();
+escucharDashboardGeneral();
