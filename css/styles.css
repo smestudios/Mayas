@@ -90,13 +90,23 @@ h1 {
   margin-bottom: 15px;
 }
 
-#dashboard label {
-  display: block;
-  margin: 0 0 8px;
+#dashboard .dashboard-filtro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
 }
 
-#dashboard label[style] {
-  margin-left: 0 !important;
+#dashboard .dashboard-filtro-fechas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#dashboard .dashboard-filtro label {
+  display: block;
+  margin: 0;
 }
 
 /* =========================
