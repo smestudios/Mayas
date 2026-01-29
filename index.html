@@ -41,18 +41,20 @@
       <div class="card" style="margin-top:30px">
         <h3>📅 Resumen por rango de fechas</h3>
 
-        <div style="margin-bottom:10px">
-          <label>
-            Desde:
-            <input type="date" id="fechaInicio">
-          </label>
+        <div class="dashboard-filtro">
+          <div class="dashboard-filtro-fechas">
+            <label>
+              Desde:
+              <input type="date" id="fechaInicio">
+            </label>
 
-          <label style="margin-left:10px">
-            Hasta:
-            <input type="date" id="fechaFin">
-          </label>
+            <label>
+              Hasta:
+              <input type="date" id="fechaFin">
+            </label>
+          </div>
 
-          <button class="primary" style="margin-left:10px" id="btnFiltrar">
+          <button class="primary" id="btnFiltrar">
             Calcular
           </button>
         </div>

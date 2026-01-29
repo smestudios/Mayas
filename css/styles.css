@@ -90,6 +90,25 @@ h1 {
   margin-bottom: 15px;
 }
 
+#dashboard .dashboard-filtro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+#dashboard .dashboard-filtro-fechas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#dashboard .dashboard-filtro label {
+  display: block;
+  margin: 0;
+}
+
 /* =========================
    DASHBOARD CARDS
 ========================= */
@@ -531,6 +550,8 @@ button.secondary:hover {
   border-radius: 14px;
   width: 100%;
   max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
 
