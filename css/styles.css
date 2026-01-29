@@ -90,6 +90,15 @@ h1 {
   margin-bottom: 15px;
 }
 
+#dashboard label {
+  display: block;
+  margin: 0 0 8px;
+}
+
+#dashboard label[style] {
+  margin-left: 0 !important;
+}
+
 /* =========================
    DASHBOARD CARDS
 ========================= */
