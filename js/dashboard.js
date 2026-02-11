@@ -19,6 +19,14 @@ const elUtilidad = document.getElementById("utilidad");
 let ventasCache = [];
 let gastosCache = [];
 
+function construirFechaLocal(valor, finDelDia = false) {
+  const [year, month, day] = valor.split("-").map(Number);
+  if (finDelDia) {
+    return new Date(year, month - 1, day, 23, 59, 59, 999);
+  }
+  return new Date(year, month - 1, day, 0, 0, 0, 0);
+}
+
 function renderDashboardGeneral() {
   const totalVentas = ventasCache.reduce(
     (acc, venta) => acc + (venta.total || 0),
@@ -113,11 +121,8 @@ btnFiltrar.addEventListener("click", () => {
     return;
   }
 
-  const inicio = new Date(fechaInicioInput.value);
-  inicio.setHours(0, 0, 0, 0);
-
-  const fin = new Date(fechaFinInput.value);
-  fin.setHours(23, 59, 59, 999);
+  const inicio = construirFechaLocal(fechaInicioInput.value);
+  const fin = construirFechaLocal(fechaFinInput.value, true);
 
   cargarDashboardFiltrado(
     Timestamp.fromDate(inicio),

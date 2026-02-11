@@ -16,6 +16,8 @@ import {
    ELEMENTOS DOM
 ========================= */
 const tablaVentas = document.getElementById("tablaVentas");
+const filtroFechaVenta = document.getElementById("filtroFechaVenta");
+const btnLimpiarFechaVenta = document.getElementById("btnLimpiarFechaVenta");
 
 const btnVender = document.getElementById("btnVender");
 const modalVenta = document.getElementById("modalVenta");
@@ -517,13 +519,42 @@ btnGuardarVentaPdf.onclick = () => registrarVenta({ descargarPdf: true });
 /* =========================
    HISTORIAL DE VENTAS
 ========================= */
-onSnapshot(collection(db, "ventas"), snap => {
+let ventasCache = [];
+
+function obtenerClaveFecha(fecha) {
+  if (!fecha || typeof fecha.toDate !== "function") return "";
+  const date = fecha.toDate();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function renderVentas() {
   tablaVentas.innerHTML = "";
 
-  snap.forEach(docu => {
-    const v = docu.data();
+  const fechaFiltro = filtroFechaVenta?.value || "";
+  const ventasOrdenadas = [...ventasCache].sort((a, b) => {
+    const fechaA = a.data.fecha?.toDate?.().getTime?.() || 0;
+    const fechaB = b.data.fecha?.toDate?.().getTime?.() || 0;
+    return fechaB - fechaA;
+  });
 
-    const productosTxt = v.productos
+  const ventasFiltradas = fechaFiltro
+    ? ventasOrdenadas.filter(item => obtenerClaveFecha(item.data.fecha) === fechaFiltro)
+    : ventasOrdenadas;
+
+  if (ventasFiltradas.length === 0) {
+    tablaVentas.innerHTML = `
+      <tr>
+        <td colspan="7">No hay ventas para la fecha seleccionada</td>
+      </tr>
+    `;
+    return;
+  }
+
+  ventasFiltradas.forEach(({ id, data: v }) => {
+    const productosTxt = (v.productos || [])
       .map(p => `${p.nombre} x${p.cantidad}`)
       .join(", ");
 
@@ -548,19 +579,30 @@ onSnapshot(collection(db, "ventas"), snap => {
     btnEditar.className = "editar";
     btnEditar.textContent = "✏️";
     btnEditar.title = "Editar venta";
-    btnEditar.onclick = () => abrirModalEdicion(docu.id, v);
+    btnEditar.onclick = () => abrirModalEdicion(id, v);
 
     const btnEliminar = document.createElement("button");
     btnEliminar.className = "eliminar";
     btnEliminar.textContent = "🗑️";
     btnEliminar.title = "Eliminar venta";
-    btnEliminar.onclick = () => eliminarVenta(docu.id, v);
+    btnEliminar.onclick = () => eliminarVenta(id, v);
 
     accionesContenedor.append(btnEditar, btnEliminar);
     accionesTd.appendChild(accionesContenedor);
 
     tablaVentas.appendChild(tr);
   });
+}
+
+onSnapshot(collection(db, "ventas"), snap => {
+  ventasCache = snap.docs.map(docu => ({ id: docu.id, data: docu.data() }));
+  renderVentas();
+});
+
+filtroFechaVenta?.addEventListener("change", renderVentas);
+btnLimpiarFechaVenta?.addEventListener("click", () => {
+  filtroFechaVenta.value = "";
+  renderVentas();
 });
 
 async function abrirModalEdicion(ventaId, ventaData) {
