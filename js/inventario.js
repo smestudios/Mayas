@@ -28,7 +28,7 @@ const btnCancelar = document.getElementById("btnCancelarInventario");
    ESTADO
 ========================= */
 let inventarioActualId = null;
-let tipoMovimiento = null; // entrada | salida | ajuste
+let tipoMovimiento = null; // entrada | salida | ajuste | cambioSalida | cambioEntrada
 let stockActual = 0;
 let productosCache = [];
 let inventarioCache = {};
@@ -65,7 +65,8 @@ function renderInventario() {
   productosCache.forEach(producto => {
     const inv = inventarioCache[producto.id] || {
       stock: 0,
-      stockMinimo: 5
+      stockMinimo: 5,
+      cambiosPendientes: 0
     };
 
     let estado = "OK";
@@ -80,12 +81,15 @@ function renderInventario() {
     tr.innerHTML = `
       <td>${producto.nombre}</td>
       <td>${inv.stock}</td>
+      <td>${inv.cambiosPendientes || 0}</td>
       <td>${inv.stockMinimo}</td>
       <td class="${claseEstado}">${estado}</td>
       <td>
         <button title="Entrada" onclick="abrirMovimiento('${producto.id}', '${producto.nombre}', ${inv.stock}, 'entrada')">➕</button>
         <button title="Salida" onclick="abrirMovimiento('${producto.id}', '${producto.nombre}', ${inv.stock}, 'salida')">➖</button>
         <button title="Ajuste" onclick="abrirMovimiento('${producto.id}', '${producto.nombre}', ${inv.stock}, 'ajuste')">✏️</button>
+        <button title="Entregado por cambio" onclick="abrirMovimiento('${producto.id}', '${producto.nombre}', ${inv.stock}, 'cambioSalida')">🔄➖</button>
+        <button title="Regresa de cambio" onclick="abrirMovimiento('${producto.id}', '${producto.nombre}', ${inv.stock}, 'cambioEntrada')">🔄➕</button>
       </td>
     `;
     tabla.appendChild(tr);
@@ -104,6 +108,8 @@ window.abrirMovimiento = (id, nombre, stock, tipo) => {
   tituloModal.textContent =
     tipo === "entrada" ? "Entrada de inventario" :
     tipo === "salida" ? "Salida de inventario" :
+    tipo === "cambioSalida" ? "Entregar producto por cambio" :
+    tipo === "cambioEntrada" ? "Regresar producto de cambio" :
     "Ajuste de inventario";
 
   nombreProductoTxt.textContent = `Producto: ${nombre}`;
@@ -124,6 +130,8 @@ btnGuardar.onclick = async () => {
   }
 
   let nuevoStock = stockActual;
+  const cambiosActuales = Number(inventarioCache[inventarioActualId]?.cambiosPendientes || 0);
+  let cambiosPendientes = cambiosActuales;
 
   if (tipoMovimiento === "entrada") {
     nuevoStock += cantidad;
@@ -141,12 +149,30 @@ btnGuardar.onclick = async () => {
     nuevoStock = cantidad;
   }
 
+  if (tipoMovimiento === "cambioSalida") {
+    if (cantidad > stockActual) {
+      alert("No hay suficiente stock");
+      return;
+    }
+    nuevoStock -= cantidad;
+    cambiosPendientes += cantidad;
+  }
+
+  if (tipoMovimiento === "cambioEntrada") {
+    if (cantidad > cambiosActuales) {
+      alert("La cantidad supera los cambios pendientes");
+      return;
+    }
+    nuevoStock += cantidad;
+    cambiosPendientes -= cantidad;
+  }
+
   const stockMinimo = inventarioCache[inventarioActualId]?.stockMinimo ?? 5;
 
   // Actualizar inventario
   await setDoc(
     doc(db, "inventario", inventarioActualId),
-    { stock: nuevoStock, stockMinimo },
+    { stock: nuevoStock, stockMinimo, cambiosPendientes },
     { merge: true }
   );
 
